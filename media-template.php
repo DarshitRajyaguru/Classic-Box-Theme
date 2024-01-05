@@ -4,7 +4,6 @@ Template Name: Media Library Table
 */
 
 get_header(); // Include the header
-
 function media_usage_info_table()
 {
     $html_output = "<div class='media-section'>";
@@ -100,19 +99,16 @@ function media_usage_info_table()
             $html_output .= '</tr>';
         }
     }
-
     $html_output .= "</table>";
     $html_output .= "</form>";
     $html_output .= "</div>";
 
     echo $html_output;
 }
-
 // Function to check media usage in widgets
 function check_media_usage_in_widgets($media_id)
 {
     global $wpdb;
-
     $widget_usage = '';
 
     // Search for media file URL in widget content
@@ -126,10 +122,8 @@ function check_media_usage_in_widgets($media_id)
     foreach ($widget_results as $widget) {
         $widget_usage .= '<p>Widget ID: ' . $widget->widget_id . '</p>';
     }
-
     return $widget_usage;
 }
-
 
 // Call the function to display the media usage information
 media_usage_info_table();
