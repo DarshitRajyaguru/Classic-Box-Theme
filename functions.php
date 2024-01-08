@@ -91,7 +91,7 @@ function classicBoxTheme_widgets()
   register_sidebar(
     array(
       'name' => 'Sidebar',
-      'id' => 'main_sidebar',
+      'id' => 'main-sidebar',
       'before_widget' => '<div class="sidebar-area">',
       'after_widget' => '</div>',
       'before_title' => '<h2 class="widget-title">',

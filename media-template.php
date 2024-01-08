@@ -179,6 +179,10 @@ function check_media_usage()
                 $media_usage[get_the_ID()][] = 'Used in Divi Builder';
             }
 
+            // Check CustomWidget usage
+            if (is_active_widget(false, false, 'custom_widget', true)) {
+                $media_usage[get_the_ID()][] = 'Used in CustomWidget';
+            }
         }
     }
 
