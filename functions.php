@@ -67,18 +67,18 @@ function core_block_enqueue_script_and_style()
 }
 add_action('wp_enqueue_scripts', 'core_block_enqueue_script_and_style');
 
-if (function_exists('register_sidebar')) {
-  register_sidebar(
-    array(
-      'name' => 'Sidebar',
-      'id' => 'sidebar-1',
-      'before_widget' => '<div id="%1$s" class="widget %2$s">',
-      'after_widget' => '</div>',
-      'before_title' => '<h2 class="widgettitle">',
-      'after_title' => '</h2>',
-    )
-  );
-}
+// if (function_exists('register_sidebar')) {
+//   register_sidebar(
+//     array(
+//       'name' => 'Sidebar',
+//       'id' => 'sidebar-1',
+//       'before_widget' => '<div id="%1$s" class="widget %2$s">',
+//       'after_widget' => '</div>',
+//       'before_title' => '<h2 class="widgettitle">',
+//       'after_title' => '</h2>',
+//     )
+//   );
+// }
 
 // Add theme support for selective refresh for widgets.
 add_theme_support('customize-selective-refresh-widgets');
@@ -91,7 +91,7 @@ function classicBoxTheme_widgets()
   register_sidebar(
     array(
       'name' => 'Sidebar',
-      'id' => 'main-sidebar',
+      'id' => 'main_sidebar',
       'before_widget' => '<div class="sidebar-area">',
       'after_widget' => '</div>',
       'before_title' => '<h2 class="widget-title">',

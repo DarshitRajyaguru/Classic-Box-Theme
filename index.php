@@ -28,6 +28,4 @@ get_header(); ?>
 
 </div><!-- /site-content -->
 
-<?php get_footer();
-
-?>
+<?php get_footer(); ?>

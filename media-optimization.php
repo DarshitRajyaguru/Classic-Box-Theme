@@ -34,13 +34,6 @@ function media_usage_info_table()
             $usage_info = array();
             $id = $attachment->ID;
 
-            // Check usage in widgets
-            $widget_usage = check_media_usage_in_widgets($id);
-
-            if (!empty($widget_usage)) {
-                $usage_info[] = '<p><b>Used in Widgets</b>: ' . $widget_usage . '</p>';
-            }
-
             // Check usage in posts and pages
             $usage_media = get_posts(
                 array(
@@ -105,98 +98,130 @@ function media_usage_info_table()
 
     echo $html_output;
 }
-// Function to check media usage in widgets
-function check_media_usage_in_widgets($media_id)
-{
-    global $wpdb;
-    $widget_usage = '';
-
-    // Search for media file URL in widget content
-    $widget_results = $wpdb->get_results(
-        $wpdb->prepare(
-            "SELECT widget_id, option_value FROM $wpdb->options WHERE option_name LIKE %s",
-            '%' . $wpdb->esc_like(wp_get_attachment_url($media_id)) . '%'
-        )
-    );
-
-    foreach ($widget_results as $widget) {
-        $widget_usage .= '<p>Widget ID: ' . $widget->widget_id . '</p>';
-    }
-    return $widget_usage;
-}
-
 // Call the function to display the media usage information
 media_usage_info_table();
 
-function check_media_usage()
-{
-    $media_query = new WP_Query(
-        array(
-            'post_type' => 'any',
-            'posts_per_page' => -1,
-        )
+function get_all_media_usage_info() {
+    $media_info_all = array();
+
+    // Step 1: Get all media attachments
+    $args = array(
+        'post_type' => 'attachment',
+        'numberposts' => -1,
     );
 
-    $media_usage = array(); // Store media usage information
+    $media_attachments = get_posts($args);
 
-    if ($media_query->have_posts()) {
-        while ($media_query->have_posts()) {
-            $media_query->the_post();
+    foreach ($media_attachments as $media_attachment) {
+        $media_id = $media_attachment->ID;
 
-            // Check Elementor content
-            if (defined('ELEMENTOR_VERSION') && \Elementor\Plugin::$instance->db->is_built_with_elementor(get_the_ID())) {
-                $media_usage[get_the_ID()][] = 'Used in Elementor';
-            }
+        // Step 2: Get usage info for each media
+        $media_info = get_media_usage_info($media_id);
 
-            // Check WPBakery Page Builder content
-            if (defined('WPB_VC_VERSION') && has_shortcode(get_the_content(), 'vc_row')) {
-                $media_usage[get_the_ID()][] = 'Used in WPBakery';
-            }
+        // If media is used, add it to the result array
+        if (!empty($media_info)) {
+            $media_info_all[] = array(
+                'media_id' => $media_id,
+                'media_title' => $media_attachment->post_title,
+                'usage_info' => $media_info,
+            );
+        }
+    }
 
-            // Check ACF fields
-            if (function_exists('acf')) {
-                $acf_fields = get_fields(get_the_ID()); // You need to set the field names you want to check
+    return $media_info_all;
+}
 
-                if (!empty($acf_fields)) {
-                    foreach ($acf_fields as $field_name => $field_value) {
-                        if (!empty(is_string($field_value)) && !empty(strpos($field_value, wp_get_attachment_url()) !== false)) {
-                            $media_usage[get_the_ID()][] = 'Used in ACF';
-                        }
-                    }
-                }
-            }
-            // Check Avada Builder content
-            if (defined('FUSION_BUILDER_PLUGIN_VERSION') && defined('FUSION_CORE_PLUGIN_VERSION') && FusionBuilder::is_builder_enabled(get_the_ID())) {
-                $media_usage[get_the_ID()][] = 'Used in Avada Builder';
-            }
-            // Check Beaver Builder content
-            if (class_exists('FLBuilderModel') && FLBuilderModel::is_builder_enabled(get_the_ID())) {
-                $media_usage[get_the_ID()][] = 'Used in Beaver Builder';
-            }
+// Function to get usage info for a specific media ID
+function get_media_usage_info($media_id) {
+    $usage_info = array();
 
-            // Check Divi Builder content
-            if (function_exists('et_pb_is_pagebuilder_used') && et_pb_is_pagebuilder_used(get_the_ID())) {
-                $media_usage[get_the_ID()][] = 'Used in Divi Builder';
-            }
+    // Query all post types
+    $post_types = get_post_types(array('public' => true), 'objects');
 
-            // Check CustomWidget usage
-            if (is_active_widget(false, false, 'custom_widget', true)) {
-                $media_usage[get_the_ID()][] = 'Used in CustomWidget';
+    // Loop through each post type
+    foreach ($post_types as $post_type) {
+        $args = array(
+            'post_type' => $post_type->name,
+            'posts_per_page' => -1,
+        );
+
+        $posts = get_posts($args);
+
+        // Loop through each post
+        foreach ($posts as $post) {
+            // Check if media ID is present in the post content
+            $post_content = $post->post_content;
+            if (strpos($post_content, 'wp-image-' . $media_id) !== false) {
+                // Identify the page builder
+                $page_builder = identify_page_builder($post_content);
+
+                $usage_info[] = array(
+                    'post_title' => $post->post_title,
+                    'post_type' => $post_type->name,
+                    'page_builder' => $page_builder,
+                );
             }
         }
     }
 
-    // Display media usage information
-    foreach ($media_usage as $post_id => $usages) {
-        $post_title = get_the_title($post_id);
-        $usage_info = implode(', ', $usages);
-
-        echo "Media used in: $post_title ($usage_info)<br>";
-    }
+    return $usage_info;
 }
 
-// Run the function
-check_media_usage();
+// Function to identify the page builder (Elementor and Beaver Builder example)
+function identify_page_builder($content) {
+    $page_builder = 'Unknown';
+
+    // Check for Elementor
+    if (strpos($content, 'elementor') !== false) {
+        $page_builder = 'Elementor';
+    }
+
+    // Check for Beaver Builder
+    if (strpos($content, 'fl-builder') !== false) {
+        $page_builder = 'Beaver Builder';
+    }
+
+    // Check for WPBakery
+    if (strpos($content, 'vc_row') !== false) {
+        $page_builder = 'WPBakery';
+    }
+
+    // Check for Divi
+    if (strpos($content, 'et_pb_section') !== false) {
+        $page_builder = 'Divi';
+    }
+
+    // Check for Thrive Architect
+    if (strpos($content, 'tve_leads_form_container') !== false) {
+        $page_builder = 'Thrive Architect';
+    }
+
+    // Check for Classic Editor
+    if (strpos($content, 'wp-editor-area') !== false) {
+        $page_builder = 'Classic Editor';
+    }
+
+    return $page_builder;
+}
+
+// ...
+
+// Example usage: Get usage info for all media
+$all_media_usage_info = get_all_media_usage_info();
+
+// Print the results
+echo '<pre>';
+print_r($all_media_usage_info);
+echo '</pre>';
+
+
+// Example usage: Get usage info for all media
+$all_media_usage_info = get_all_media_usage_info();
+
+// Print the results
+echo '<pre>';
+print_r($all_media_usage_info);
+echo '</pre>';
 
 wp_reset_postdata();
 
