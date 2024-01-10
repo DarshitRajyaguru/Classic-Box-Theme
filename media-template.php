@@ -201,11 +201,6 @@ function identify_page_builder($content) {
         $page_builder = 'Classic Editor';
     }
 
-    // Check for Gutenberg (Block Editor)
-    if (strpos($content, 'block-editor') !== false) {
-        $page_builder = 'Gutenberg';
-    }
-    
     return $page_builder;
 }
 
